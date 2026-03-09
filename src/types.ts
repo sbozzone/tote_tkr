@@ -3,7 +3,6 @@ export type Tote = {
   name: string
   location: string
   dateUpdated: string
-  owner: string
 }
 
 export type Item = {
@@ -12,7 +11,6 @@ export type Item = {
   name: string
   quantity: number
   notes: string
-  photoUrl: string
 }
 
 export type AppState = {
@@ -20,6 +18,6 @@ export type AppState = {
   items: Item[]
 }
 
-export type ToteInput = Pick<Tote, 'name' | 'location' | 'owner'>
+export type ToteInput = Pick<Tote, 'name' | 'location'>
 
-export type ItemInput = Pick<Item, 'name' | 'quantity' | 'notes' | 'photoUrl'>
+export type ItemInput = Pick<Item, 'name' | 'quantity' | 'notes'>

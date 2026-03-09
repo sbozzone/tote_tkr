@@ -6,9 +6,9 @@
   --panel: rgba(255, 252, 247, 0.78);
   --ink: #1e2d2a;
   --muted: #5e695f;
-  --line: rgba(56, 76, 70, 0.14);
-  --accent: #284d41;
-  --accent-ink: #f5f0e8;
+  --line: rgba(95, 153, 126, 0.16);
+  --accent: #5f997e;
+  --accent-ink: #f8fbf8;
   --highlight: #c7784f;
   --shadow: 0 24px 60px rgba(42, 56, 52, 0.12);
 
@@ -31,7 +31,7 @@ html {
   min-width: 320px;
   background:
     radial-gradient(circle at top left, rgba(199, 120, 79, 0.18), transparent 30%),
-    radial-gradient(circle at top right, rgba(40, 77, 65, 0.12), transparent 25%),
+    radial-gradient(circle at top right, rgba(95, 153, 126, 0.13), transparent 25%),
     linear-gradient(180deg, #f6efe5 0%, #f8f2ea 55%, #f4ede4 100%);
 }
 

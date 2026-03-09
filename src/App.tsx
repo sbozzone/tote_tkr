@@ -5,7 +5,6 @@ import { QRCodeSVG } from 'qrcode.react'
 import { BottomNav } from './components/BottomNav'
 import { QrScanner } from './components/QrScanner'
 import { useToteScanStore, type ToteScanStore } from './hooks/useToteScanStore'
-import { PhotoUploadUnavailableError, uploadItemPhoto } from './lib/firebase'
 import { buildToteQrValue, extractToteId } from './lib/qr'
 import type { Item, ItemInput, Tote, ToteInput } from './types'
 
@@ -15,14 +14,12 @@ type ItemDraft = ItemInput
 const emptyToteDraft: ToteDraft = {
   name: '',
   location: '',
-  owner: '',
 }
 
 const emptyItemDraft: ItemDraft = {
   name: '',
   quantity: 1,
   notes: '',
-  photoUrl: '',
 }
 
 function App() {
@@ -44,11 +41,11 @@ function App() {
 function AppShell({ store }: { store: ToteScanStore }) {
   return (
     <div className="relative min-h-screen overflow-hidden text-[color:var(--ink)]">
-      <div className="screen-only pointer-events-none absolute inset-x-0 top-0 h-56 bg-[radial-gradient(circle_at_top,rgba(40,77,65,0.18),transparent_65%)]" />
+      <div className="screen-only pointer-events-none absolute inset-x-0 top-0 h-56 bg-[radial-gradient(circle_at_top,rgba(95,153,126,0.18),transparent_65%)]" />
       <main className="relative mx-auto flex min-h-screen w-full max-w-md flex-col px-4 pb-28 pt-6">
         <header className="screen-only mb-6 overflow-hidden rounded-[32px] border border-[color:var(--line)] bg-[color:rgba(255,250,245,0.82)] p-5 shadow-[var(--shadow)] backdrop-blur">
           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[color:var(--highlight)]">
-            ToteScan MVP
+            ToteScan
           </p>
           <div className="mt-3 flex items-end justify-between gap-4">
             <div>
@@ -80,7 +77,6 @@ function HomePage() {
   const [draft, setDraft] = useState<ToteDraft>(emptyToteDraft)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const owners = new Set(totes.map((tote) => tote.owner).filter(Boolean)).size
   const sortedTotes = [...totes].sort(
     (left, right) => new Date(right.dateUpdated).getTime() - new Date(left.dateUpdated).getTime(),
   )
@@ -98,7 +94,6 @@ function HomePage() {
       const toteId = await createTote({
         name: draft.name,
         location: draft.location,
-        owner: draft.owner || 'Shared',
       })
 
       setDraft(emptyToteDraft)
@@ -112,7 +107,7 @@ function HomePage() {
     <div className="space-y-5">
       <section className="grid grid-cols-3 gap-3">
         <MetricCard label="Items" value={items.length} />
-        <MetricCard label="Owners" value={owners} />
+        <MetricCard label="Totes" value={totes.length} />
         <MetricCard label="Ready" value={sortedTotes.length ? 'Live' : 'Start'} />
       </section>
 
@@ -120,7 +115,7 @@ function HomePage() {
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>
             <h2 className="text-xl">Create a tote</h2>
-            <p className="text-sm text-[color:var(--muted)]">Give it a name, location, and owner so it is label-ready.</p>
+            <p className="text-sm text-[color:var(--muted)]">Give it a name and location so it is label-ready.</p>
           </div>
           <Link
             className="rounded-full bg-[color:var(--accent)] px-4 py-2 text-sm font-semibold text-[color:var(--accent-ink)]"
@@ -142,12 +137,6 @@ function HomePage() {
             onChange={(value) => setDraft((current) => ({ ...current, location: value }))}
             placeholder="Garage Rack A"
             value={draft.location}
-          />
-          <Field
-            label="Owner"
-            onChange={(value) => setDraft((current) => ({ ...current, owner: value }))}
-            placeholder="Sam"
-            value={draft.owner}
           />
           <button
             className="w-full rounded-2xl bg-[color:var(--highlight)] px-4 py-3 font-semibold text-white transition hover:brightness-105"
@@ -178,9 +167,7 @@ function HomePage() {
                     {tote.location}
                   </p>
                   <h3 className="mt-1 truncate text-xl">{tote.name}</h3>
-                  <p className="mt-1 text-sm text-[color:var(--muted)]">
-                    Owner: {tote.owner || 'Shared'} | Updated {formatDate(tote.dateUpdated)}
-                  </p>
+                  <p className="mt-1 text-sm text-[color:var(--muted)]">Updated {formatDate(tote.dateUpdated)}</p>
                 </Link>
                 <button
                   className="rounded-full border border-[color:var(--line)] px-3 py-2 text-sm font-semibold text-[color:var(--muted)]"
@@ -237,7 +224,7 @@ function TotePageRoute() {
         }
         body={
           storageMode === 'firebase'
-            ? 'This QR label does not match a tote in Firestore yet.'
+            ? 'This QR label does not match a tote in Firebase yet.'
             : 'This tote label does not match a record in local storage yet.'
         }
         title="Tote not found"
@@ -257,39 +244,11 @@ function TotePage({ tote, toteId }: { tote: Tote; toteId: string }) {
   const [toteDraft, setToteDraft] = useState<ToteDraft>(() => ({
     name: tote.name,
     location: tote.location,
-    owner: tote.owner,
   }))
   const [itemDraft, setItemDraft] = useState<ItemDraft>(emptyItemDraft)
   const [editingItemId, setEditingItemId] = useState<string | null>(null)
-  const [photoMessage, setPhotoMessage] = useState('')
   const [isSavingTote, setIsSavingTote] = useState(false)
   const [isSavingItem, setIsSavingItem] = useState(false)
-  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false)
-
-  async function handlePhotoSelection(fileList: FileList | null) {
-    const file = fileList?.[0]
-
-    if (!file) {
-      return
-    }
-
-    setIsUploadingPhoto(true)
-    setPhotoMessage('Uploading photo...')
-
-    try {
-      const photoUrl = await uploadItemPhoto(file, toteId)
-      setItemDraft((current) => ({ ...current, photoUrl }))
-      setPhotoMessage(`${file.name} attached`)
-    } catch (error) {
-      if (error instanceof PhotoUploadUnavailableError) {
-        setPhotoMessage('Photos need Firebase Storage on Blaze. You can still save the item without a photo.')
-      } else {
-        setPhotoMessage('Photo upload failed. You can still save the item without a photo.')
-      }
-    } finally {
-      setIsUploadingPhoto(false)
-    }
-  }
 
   async function handleSaveTote(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -313,15 +272,12 @@ function TotePage({ tote, toteId }: { tote: Tote; toteId: string }) {
       name: item.name,
       quantity: item.quantity,
       notes: item.notes,
-      photoUrl: item.photoUrl,
     })
-    setPhotoMessage(item.photoUrl ? 'Existing photo attached' : '')
   }
 
   function resetItemForm() {
     setEditingItemId(null)
     setItemDraft(emptyItemDraft)
-    setPhotoMessage('')
   }
 
   async function handleSaveItem(event: FormEvent<HTMLFormElement>) {
@@ -358,9 +314,7 @@ function TotePage({ tote, toteId }: { tote: Tote; toteId: string }) {
           {tote.location} / {tote.name}
         </p>
         <h2 className="mt-2 text-2xl">{tote.name}</h2>
-        <p className="mt-1 text-sm text-[color:var(--muted)]">
-          Owner: {tote.owner || 'Shared'} | Updated {formatDate(tote.dateUpdated)}
-        </p>
+        <p className="mt-1 text-sm text-[color:var(--muted)]">Updated {formatDate(tote.dateUpdated)}</p>
 
         <form className="mt-5 space-y-3" onSubmit={handleSaveTote}>
           <Field
@@ -372,11 +326,6 @@ function TotePage({ tote, toteId }: { tote: Tote; toteId: string }) {
             label="Location"
             onChange={(value) => setToteDraft((current) => ({ ...current, location: value }))}
             value={toteDraft.location}
-          />
-          <Field
-            label="Owner"
-            onChange={(value) => setToteDraft((current) => ({ ...current, owner: value }))}
-            value={toteDraft.owner}
           />
           <div className="flex gap-3">
             <button
@@ -420,7 +369,7 @@ function TotePage({ tote, toteId }: { tote: Tote; toteId: string }) {
           </button>
         </div>
         <div className="mt-5 flex items-center justify-between gap-4 rounded-[24px] bg-[color:var(--paper)] p-4">
-          <QRCodeSVG bgColor="transparent" fgColor="#284d41" size={132} value={buildToteQrValue(toteId)} />
+          <QRCodeSVG bgColor="transparent" fgColor="#4f9072" size={132} value={buildToteQrValue(toteId)} />
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold">{tote.name}</p>
             <p className="mt-1 text-sm text-[color:var(--muted)]">{tote.location}</p>
@@ -433,7 +382,7 @@ function TotePage({ tote, toteId }: { tote: Tote; toteId: string }) {
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>
             <h3 className="text-xl">{editingItemId ? 'Edit item' : 'Add item'}</h3>
-            <p className="text-sm text-[color:var(--muted)]">Fast updates for quantity, notes, and photo evidence.</p>
+            <p className="text-sm text-[color:var(--muted)]">Fast updates for quantity and notes while you are at the tote.</p>
           </div>
           {editingItemId ? (
             <button
@@ -464,44 +413,11 @@ function TotePage({ tote, toteId }: { tote: Tote; toteId: string }) {
             placeholder="1/4 in roundover set, carbide"
             value={itemDraft.notes}
           />
-          <label className="block space-y-2">
-            <span className="text-sm font-semibold text-[color:var(--muted)]">Photo</span>
-            <input
-              accept="image/*"
-              capture="environment"
-              className="block w-full rounded-2xl border border-dashed border-[color:var(--line)] bg-white px-4 py-3 text-sm"
-              disabled={isUploadingPhoto}
-              onChange={(event) => void handlePhotoSelection(event.target.files)}
-              type="file"
-            />
-          </label>
-          {photoMessage ? <p className="text-sm text-[color:var(--muted)]">{photoMessage}</p> : null}
-          {itemDraft.photoUrl ? (
-            <div className="overflow-hidden rounded-[24px] border border-[color:var(--line)] bg-white">
-              <img alt="Item preview" className="h-44 w-full object-cover" src={itemDraft.photoUrl} />
-              <button
-                className="w-full border-t border-[color:var(--line)] px-4 py-3 text-sm font-semibold text-[color:var(--muted)]"
-                onClick={() => {
-                  setItemDraft((current) => ({ ...current, photoUrl: '' }))
-                  setPhotoMessage('')
-                }}
-                type="button"
-              >
-                Remove photo
-              </button>
-            </div>
-          ) : null}
           <button
             className="w-full rounded-2xl bg-[color:var(--highlight)] px-4 py-3 font-semibold text-white"
             type="submit"
           >
-            {isUploadingPhoto
-              ? 'Uploading photo...'
-              : isSavingItem
-                ? 'Saving item...'
-                : editingItemId
-                  ? 'Save item changes'
-                  : 'Add item to tote'}
+            {isSavingItem ? 'Saving item...' : editingItemId ? 'Save item changes' : 'Add item to tote'}
           </button>
         </form>
       </section>
@@ -549,11 +465,6 @@ function TotePage({ tote, toteId }: { tote: Tote; toteId: string }) {
                   </button>
                 </div>
               </div>
-              {item.photoUrl ? (
-                <div className="mt-4 overflow-hidden rounded-[24px] border border-[color:var(--line)]">
-                  <img alt={item.name} className="h-40 w-full object-cover" src={item.photoUrl} />
-                </div>
-              ) : null}
             </article>
           ))
         ) : (
@@ -669,7 +580,7 @@ function ScanPage() {
     if (!tote) {
       setMessage(
         storageMode === 'firebase'
-          ? 'Label recognized, but the tote does not exist in Firestore yet.'
+          ? 'Label recognized, but the tote does not exist in Firebase yet.'
           : 'Label recognized, but the tote does not exist in this local workspace yet.',
       )
       return

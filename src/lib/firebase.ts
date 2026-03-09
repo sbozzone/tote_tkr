@@ -1,16 +1,6 @@
 import { type FirebaseApp, initializeApp } from 'firebase/app'
 import { getAuth, signInAnonymously } from 'firebase/auth'
 import { type Database, getDatabase } from 'firebase/database'
-import { type FirebaseStorage, getDownloadURL, getStorage, ref, uploadBytes } from 'firebase/storage'
-
-import { fileToDataUrl } from './files'
-
-export class PhotoUploadUnavailableError extends Error {
-  constructor(message: string) {
-    super(message)
-    this.name = 'PhotoUploadUnavailableError'
-  }
-}
 
 const defaultFirebaseConfig = {
   apiKey: 'AIzaSyCU_TjEqkhcTnCJwbalkro5MKEHclj1qsg',
@@ -38,7 +28,6 @@ const firebaseConfig = {
 export const isFirebaseConfigured = Object.values(firebaseConfig).every(Boolean)
 
 let realtimeDb: Database | null = null
-let firebaseStorage: FirebaseStorage | null = null
 let anonymousSignInPromise: Promise<void> | null = null
 let firebaseApp: FirebaseApp | null = null
 
@@ -68,20 +57,6 @@ export function getRealtimeDb() {
   return realtimeDb
 }
 
-export function getFirebaseStorage() {
-  if (!firebaseStorage) {
-    const app = getFirebaseApp()
-
-    if (!app) {
-      return null
-    }
-
-    firebaseStorage = getStorage(app)
-  }
-
-  return firebaseStorage
-}
-
 export async function ensureAnonymousSession() {
   const app = getFirebaseApp()
 
@@ -99,25 +74,4 @@ export async function ensureAnonymousSession() {
   }
 
   await anonymousSignInPromise
-}
-
-export async function uploadItemPhoto(file: File, toteId: string) {
-  const storage = getFirebaseStorage()
-
-  if (!storage) {
-    return fileToDataUrl(file)
-  }
-
-  try {
-    await ensureAnonymousSession()
-
-    const safeName = file.name.replace(/[^a-z0-9.-]/gi, '-').toLowerCase()
-    const storageRef = ref(storage, `totes/${toteId}/${crypto.randomUUID()}-${safeName}`)
-
-    await uploadBytes(storageRef, file)
-
-    return await getDownloadURL(storageRef)
-  } catch {
-    throw new PhotoUploadUnavailableError('Photo uploads require Firebase Storage on the Blaze plan.')
-  }
 }

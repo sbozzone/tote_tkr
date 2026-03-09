@@ -110,7 +110,6 @@ export function useToteScanStore() {
       id: toteId,
       name: input.name.trim(),
       location: input.location.trim(),
-      owner: input.owner.trim(),
       dateUpdated: touchDate(),
     }
 
@@ -141,7 +140,6 @@ export function useToteScanStore() {
     const nextTote = {
       name: input.name.trim(),
       location: input.location.trim(),
-      owner: input.owner.trim(),
       dateUpdated: touchDate(),
     }
 
@@ -211,7 +209,6 @@ export function useToteScanStore() {
       name: input.name.trim(),
       quantity: input.quantity,
       notes: input.notes.trim(),
-      photoUrl: input.photoUrl,
     }
 
     if (isFirebaseConfigured) {
@@ -243,7 +240,6 @@ export function useToteScanStore() {
       name: input.name.trim(),
       quantity: input.quantity,
       notes: input.notes.trim(),
-      photoUrl: input.photoUrl,
     }
 
     if (isFirebaseConfigured) {
@@ -262,7 +258,6 @@ export function useToteScanStore() {
         [`items/${itemId}/name`]: nextItem.name,
         [`items/${itemId}/quantity`]: nextItem.quantity,
         [`items/${itemId}/notes`]: nextItem.notes,
-        [`items/${itemId}/photoUrl`]: nextItem.photoUrl,
         [`totes/${existingItem.toteId}/dateUpdated`]: touchDate(),
       })
       return
