@@ -5,7 +5,7 @@ import { QRCodeSVG } from 'qrcode.react'
 import { BottomNav } from './components/BottomNav'
 import { QrScanner } from './components/QrScanner'
 import { useToteScanStore, type ToteScanStore } from './hooks/useToteScanStore'
-import { uploadItemPhoto } from './lib/firebase'
+import { PhotoUploadUnavailableError, uploadItemPhoto } from './lib/firebase'
 import { buildToteQrValue, extractToteId } from './lib/qr'
 import type { Item, ItemInput, Tote, ToteInput } from './types'
 
@@ -280,6 +280,12 @@ function TotePage({ tote, toteId }: { tote: Tote; toteId: string }) {
       const photoUrl = await uploadItemPhoto(file, toteId)
       setItemDraft((current) => ({ ...current, photoUrl }))
       setPhotoMessage(`${file.name} attached`)
+    } catch (error) {
+      if (error instanceof PhotoUploadUnavailableError) {
+        setPhotoMessage('Photos need Firebase Storage on Blaze. You can still save the item without a photo.')
+      } else {
+        setPhotoMessage('Photo upload failed. You can still save the item without a photo.')
+      }
     } finally {
       setIsUploadingPhoto(false)
     }

@@ -5,6 +5,13 @@ import { type FirebaseStorage, getDownloadURL, getStorage, ref, uploadBytes } fr
 
 import { fileToDataUrl } from './files'
 
+export class PhotoUploadUnavailableError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'PhotoUploadUnavailableError'
+  }
+}
+
 const defaultFirebaseConfig = {
   apiKey: 'AIzaSyCU_TjEqkhcTnCJwbalkro5MKEHclj1qsg',
   authDomain: 'totescan-998a3.firebaseapp.com',
@@ -111,6 +118,6 @@ export async function uploadItemPhoto(file: File, toteId: string) {
 
     return await getDownloadURL(storageRef)
   } catch {
-    return fileToDataUrl(file)
+    throw new PhotoUploadUnavailableError('Photo uploads require Firebase Storage on the Blaze plan.')
   }
 }
