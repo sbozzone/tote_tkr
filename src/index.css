@@ -1,0 +1,98 @@
+@import "tailwindcss";
+
+:root {
+  --paper: #f8f2ea;
+  --paper-strong: #efe2d2;
+  --panel: rgba(255, 252, 247, 0.78);
+  --ink: #1e2d2a;
+  --muted: #5e695f;
+  --line: rgba(56, 76, 70, 0.14);
+  --accent: #284d41;
+  --accent-ink: #f5f0e8;
+  --highlight: #c7784f;
+  --shadow: 0 24px 60px rgba(42, 56, 52, 0.12);
+
+  color: var(--ink);
+  background: var(--paper);
+  font-family: "Segoe UI Variable Text", "Aptos", "Trebuchet MS", sans-serif;
+  font-synthesis: none;
+  line-height: 1.5;
+  font-weight: 400;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 320px;
+  background:
+    radial-gradient(circle at top left, rgba(199, 120, 79, 0.18), transparent 30%),
+    radial-gradient(circle at top right, rgba(40, 77, 65, 0.12), transparent 25%),
+    linear-gradient(180deg, #f6efe5 0%, #f8f2ea 55%, #f4ede4 100%);
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+body::before {
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.14) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.12) 1px, transparent 1px);
+  background-size: 24px 24px;
+  content: '';
+  opacity: 0.25;
+  pointer-events: none;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: "Bahnschrift", "Arial Narrow", sans-serif;
+  letter-spacing: 0.02em;
+}
+
+::selection {
+  background: rgba(199, 120, 79, 0.28);
+}
+
+@media print {
+  body::before,
+  .screen-only,
+  .app-shell-nav {
+    display: none !important;
+  }
+
+  body {
+    background: white;
+  }
+
+  .print-sheet {
+    box-shadow: none !important;
+  }
+}
