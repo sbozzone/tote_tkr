@@ -2,12 +2,12 @@
 
 ToteScan is a mobile-first inventory app for tracking physical storage containers like totes, bins, drawers, and shelves.
 
-This build is now wired for:
+This build is wired for:
 
 - Firebase Realtime Database for tote and item data
 - Firebase Storage for item photos
+- Firebase Anonymous Authentication for app access
 - GitHub Pages for hosting
-- Hash-based routing so QR links work on GitHub Pages
 
 ## What is built
 
@@ -16,15 +16,9 @@ This build is now wired for:
 - QR code generation for each tote
 - QR scan flow that opens the matching tote screen
 - Global item search with a location filter
-- Firebase-backed sync with local fallback logic still in place for development
+- Anonymous Firebase sign-in before reads and writes
 
-## Firebase config
-
-The app already includes your Firebase web config in `src/lib/firebase.ts`, so GitHub Pages can build and deploy without extra repo variables.
-
-If you ever want to override it locally, copy `.env.example` to `.env` and set the `VITE_FIREBASE_*` values.
-
-## Run locally
+## Local commands
 
 ```bash
 npm install
@@ -43,31 +37,52 @@ Lint:
 npm run lint
 ```
 
-## Data layout
+Deploy Firebase rules:
 
-- `totes/{toteId}` in Realtime Database
-- `items/{itemId}` in Realtime Database
-- `totes/{toteId}/...` photo files in Firebase Storage
+```bash
+npm run firebase:login
+npm run firebase:deploy:rules
+```
 
-Each item stores its parent `toteId`, which keeps global search simple.
+## Firebase files in this repo
+
+- `src/lib/firebase.ts`
+- `database.rules.json`
+- `storage.rules`
+- `firebase.json`
+- `.firebaserc`
+
+The Firebase project is already set to `totescan-998a3`.
+
+## One-time setup in Firebase Console
+
+1. Enable `Authentication > Sign-in method > Anonymous`.
+2. Confirm Realtime Database is created for project `totescan-998a3`.
+3. Confirm Storage is enabled for the same project.
+4. Deploy the rules from this repo with `npm run firebase:deploy:rules`.
 
 ## GitHub Pages deployment
 
 This repo includes a GitHub Actions workflow at `.github/workflows/deploy-pages.yml`.
 
-To use it:
+To publish the app:
 
-1. Push the repo to GitHub.
-2. In GitHub, open `Settings > Pages`.
-3. Set the source to `GitHub Actions`.
-4. Push to `main`.
+1. Open `Settings > Pages` in the GitHub repo.
+2. Set the source to `GitHub Actions`.
+3. Re-run the failed workflow or push a new commit.
 
-## Important Firebase note
+Expected site URL:
 
-Your Firebase web config is public in the built app. That is normal for Firebase web apps. Security comes from Realtime Database rules and Storage rules, not from hiding these values.
+- `https://sbozzone.github.io/tote_tkr/`
 
-If your database or storage rules are still locked down, the app may connect but photo uploads or writes can fail until those rules are updated.
+## Security model
 
-## Recommended next step
+- App users must have a Firebase auth session
+- This app uses anonymous auth right now
+- Realtime Database reads and writes require `auth != null`
+- Storage reads and writes require `auth != null`
+- Storage uploads are limited to image files under 10 MB
 
-Add Firebase Authentication and lock Realtime Database and Storage rules to signed-in users before storing real inventory data long term.
+## Important note
+
+Firebase web config is public in client apps by design. Security comes from Firebase Auth plus rules, not from hiding API keys in the frontend.

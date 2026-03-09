@@ -1,0 +1,17 @@
+{
+  "rules": {
+    ".read": "auth != null",
+    ".write": "auth != null",
+    "totes": {
+      "$toteId": {
+        ".validate": "!newData.exists() || (newData.hasChildren(['id', 'name', 'location', 'owner', 'dateUpdated']) && newData.child('id').isString() && newData.child('id').val() === $toteId && newData.child('name').isString() && newData.child('name').val().length > 0 && newData.child('name').val().length <= 120 && newData.child('location').isString() && newData.child('location').val().length > 0 && newData.child('location').val().length <= 200 && newData.child('owner').isString() && newData.child('owner').val().length <= 120 && newData.child('dateUpdated').isString())"
+      }
+    },
+    "items": {
+      ".indexOn": ["toteId"],
+      "$itemId": {
+        ".validate": "!newData.exists() || (newData.hasChildren(['id', 'toteId', 'name', 'quantity', 'notes', 'photoUrl']) && newData.child('id').isString() && newData.child('id').val() === $itemId && newData.child('toteId').isString() && root.child('totes').child(newData.child('toteId').val()).exists() && newData.child('name').isString() && newData.child('name').val().length > 0 && newData.child('name').val().length <= 160 && newData.child('quantity').isNumber() && newData.child('quantity').val() >= 0 && newData.child('notes').isString() && newData.child('notes').val().length <= 2000 && newData.child('photoUrl').isString() && newData.child('photoUrl').val().length <= 5000)"
+      }
+    }
+  }
+}

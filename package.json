@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "firebase:login": "npx firebase-tools login",
+    "firebase:deploy:rules": "npx firebase-tools deploy --only database,storage"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.2.1",

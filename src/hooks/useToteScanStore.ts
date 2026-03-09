@@ -34,6 +34,16 @@ export function useToteScanStore() {
     isFirebaseConfigured ? 'Connecting to Firebase...' : 'Local mode',
   )
 
+  async function requireAnonymousAccess() {
+    try {
+      await ensureAnonymousSession()
+      return true
+    } catch {
+      setSyncStatus('Enable Anonymous auth in Firebase Console')
+      return false
+    }
+  }
+
   useEffect(() => {
     if (isFirebaseConfigured) {
       return
@@ -54,10 +64,6 @@ export function useToteScanStore() {
       return
     }
 
-    void ensureAnonymousSession().then(() => {
-      setSyncStatus('Firebase Realtime Database')
-    })
-
     const unsubscribeTotes = onValue(
       ref(db, 'totes'),
       (snapshot) => {
@@ -72,7 +78,7 @@ export function useToteScanStore() {
         setSyncStatus('Firebase Realtime Database')
       },
       () => {
-        setSyncStatus('Firebase sync error')
+        setSyncStatus('Firebase read blocked by rules or auth')
       },
     )
 
@@ -88,7 +94,7 @@ export function useToteScanStore() {
         setSyncStatus('Firebase Realtime Database')
       },
       () => {
-        setSyncStatus('Firebase sync error')
+        setSyncStatus('Firebase read blocked by rules or auth')
       },
     )
 
@@ -115,7 +121,10 @@ export function useToteScanStore() {
         return toteId
       }
 
-      await ensureAnonymousSession()
+      if (!(await requireAnonymousAccess())) {
+        return toteId
+      }
+
       await set(ref(db, `totes/${toteId}`), nextTote)
       return toteId
     }
@@ -143,7 +152,10 @@ export function useToteScanStore() {
         return
       }
 
-      await ensureAnonymousSession()
+      if (!(await requireAnonymousAccess())) {
+        return
+      }
+
       await update(ref(db, `totes/${toteId}`), nextTote)
       return
     }
@@ -169,7 +181,9 @@ export function useToteScanStore() {
         return
       }
 
-      await ensureAnonymousSession()
+      if (!(await requireAnonymousAccess())) {
+        return
+      }
 
       const itemsSnapshot = await get(query(ref(db, 'items'), orderByChild('toteId'), equalTo(toteId)))
       const updates: Record<string, null> = {
@@ -207,7 +221,10 @@ export function useToteScanStore() {
         return
       }
 
-      await ensureAnonymousSession()
+      if (!(await requireAnonymousAccess())) {
+        return
+      }
+
       await update(ref(db), {
         [`items/${nextItem.id}`]: nextItem,
         [`totes/${toteId}/dateUpdated`]: touchDate(),
@@ -237,7 +254,10 @@ export function useToteScanStore() {
         return
       }
 
-      await ensureAnonymousSession()
+      if (!(await requireAnonymousAccess())) {
+        return
+      }
+
       await update(ref(db), {
         [`items/${itemId}/name`]: nextItem.name,
         [`items/${itemId}/quantity`]: nextItem.quantity,
@@ -278,7 +298,10 @@ export function useToteScanStore() {
         return
       }
 
-      await ensureAnonymousSession()
+      if (!(await requireAnonymousAccess())) {
+        return
+      }
+
       await update(ref(db), {
         [`items/${itemId}`]: null,
         [`totes/${existingItem.toteId}/dateUpdated`]: touchDate(),

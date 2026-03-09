@@ -85,7 +85,10 @@ export async function ensureAnonymousSession() {
   if (!anonymousSignInPromise) {
     anonymousSignInPromise = signInAnonymously(getAuth(app))
       .then(() => undefined)
-      .catch(() => undefined)
+      .catch((error) => {
+        anonymousSignInPromise = null
+        throw error
+      })
   }
 
   await anonymousSignInPromise
