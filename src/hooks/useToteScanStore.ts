@@ -64,43 +64,60 @@ export function useToteScanStore() {
       return
     }
 
-    const unsubscribeTotes = onValue(
-      ref(db, 'totes'),
-      (snapshot) => {
-        const totes = valuesFromSnapshot<Tote>(snapshot.val()).sort(
-          (left, right) => new Date(right.dateUpdated).getTime() - new Date(left.dateUpdated).getTime(),
+    let unsubscribeTotes: VoidFunction | undefined
+    let unsubscribeItems: VoidFunction | undefined
+    let cancelled = false
+
+    void ensureAnonymousSession()
+      .then(() => {
+        if (cancelled) {
+          return
+        }
+
+        unsubscribeTotes = onValue(
+          ref(db, 'totes'),
+          (snapshot) => {
+            const totes = valuesFromSnapshot<Tote>(snapshot.val()).sort(
+              (left, right) => new Date(right.dateUpdated).getTime() - new Date(left.dateUpdated).getTime(),
+            )
+
+            setState((current) => ({
+              ...current,
+              totes,
+            }))
+            setSyncStatus('Firebase Realtime Database')
+          },
+          () => {
+            setSyncStatus('Firebase read blocked by rules or auth')
+          },
         )
 
-        setState((current) => ({
-          ...current,
-          totes,
-        }))
-        setSyncStatus('Firebase Realtime Database')
-      },
-      () => {
-        setSyncStatus('Firebase read blocked by rules or auth')
-      },
-    )
+        unsubscribeItems = onValue(
+          ref(db, 'items'),
+          (snapshot) => {
+            const items = valuesFromSnapshot<Item>(snapshot.val())
 
-    const unsubscribeItems = onValue(
-      ref(db, 'items'),
-      (snapshot) => {
-        const items = valuesFromSnapshot<Item>(snapshot.val())
-
-        setState((current) => ({
-          ...current,
-          items,
-        }))
-        setSyncStatus('Firebase Realtime Database')
-      },
-      () => {
-        setSyncStatus('Firebase read blocked by rules or auth')
-      },
-    )
+            setState((current) => ({
+              ...current,
+              items,
+            }))
+            setSyncStatus('Firebase Realtime Database')
+          },
+          () => {
+            setSyncStatus('Firebase read blocked by rules or auth')
+          },
+        )
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setSyncStatus('Enable Anonymous auth in Firebase Console')
+        }
+      })
 
     return () => {
-      unsubscribeTotes()
-      unsubscribeItems()
+      cancelled = true
+      unsubscribeTotes?.()
+      unsubscribeItems?.()
     }
   }, [])
 
